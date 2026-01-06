@@ -1,0 +1,15 @@
+# Causal Synth Engine Dependencies
+# Data generation pipeline for PE vendor consolidation
+
+# Core
+pandas>=2.0.0
+numpy>=1.24.0
+pyyaml>=6.0
+
+# Optional: for extended functionality
+scipy>=1.10.0
+tqdm>=4.65.0
+
+# Development
+pytest>=7.0.0
+black>=23.0.0
