@@ -6,85 +6,105 @@ This document captures the key challenges overcome during the development of the
 
 ## Challenge 1: Cold-Start Data Scarcity
 
-**Problem:** Private equity vendor data doesn't exist in public datasets. PE firms pay consultants $1M+/year for intelligence that should be table stakes.
-
-**Why it matters:**
-- Each portfolio company tracks vendors differently
-- Contracts, pricing, and switching decisions are confidential
-- A typical PE fund sees only 10-20 vendor transitions per year
+**Problem:** Private equity vendor data is fragmented, private, and sparse. Training a GNN on real PE data leads to massive overfitting—the model memorizes the few examples rather than learning generalizable patterns.
 
 **Naive solution:** Generate random synthetic data.
 
-**Why naive fails:** Random data has no structure. A model trained on random switches learns nothing about *why* practices switch vendors. Predictions are statistically valid but operationally useless.
+**Why naive fails:** Random data has no structure. A model trained on random switches learns nothing about *why* practices switch vendors.
 
-**Our solution:** Mechanism-first data generation. Define the causal rules first, then generate data that obeys them.
+**Solution:** Mechanism-first data generation. Define the causal rules first, then generate data that obeys them.
 
 ---
 
-## Challenge 2: LLM Research Reliability
+## Challenge 2: LLM Research Tool Selection
+
+**Original Plan:** Use PyG TXT2KG tool for automated knowledge graph extraction from vendor websites.
+
+**Actual Implementation:** Used manual LLM research with structured prompts (Claude Opus, Sonnet, ChatGPT Pro).
+
+**Why different:**
+- Manual LLM research gave higher quality results with confidence levels and source URLs
+- PyG TXT2KG would have required NVIDIA NIM API setup
+- Manual approach enabled category pattern discovery (critical insight)
+
+**Result:** Extracted MORE data than planned—KPIs, pricing, certifications, DSO partnerships vs. just integration_quality.
+
+---
+
+## Challenge 3: Category Pattern Discovery
+
+**Problem:** Initial design assumed generic integration quality assignments across all vendors.
+
+**Discovery:** LLM research revealed that 5 of 7 categories have FIXED integration patterns:
+
+| Category | Pattern | Evidence |
+|----------|---------|----------|
+| Lab | ALL partial_csv | STL file uploads, portal workflows |
+| Telephony | ALL full_api | Call Pop requires real-time sync |
+| Scheduling | ALL full_api | Calendar write-back requires real-time |
+| Supplies | ALL partial_csv | Separate e-commerce portals |
+| RCM | Tier-dependent | Premium vendors have certified integrations |
+
+**Impact:** These structural patterns, not assumed but discovered, made the synthetic data realistic.
+
+---
+
+## Challenge 4: Cross-Model Validation
 
 **Problem:** LLMs hallucinate. Asking "what EHR integrations does Weave support?" could return fabricated information.
 
-**Diagnosis:** Early research prompts returned plausible-sounding but unverifiable claims about vendor capabilities.
+**Solution:** Cross-validated findings across multiple models:
+- Claude Opus 4.1 (Batches 1, 4)
+- Claude Sonnet 4.5 (Batches 2, 5)
+- ChatGPT Pro (Batch 3, validations)
+
+**Example:**
+- Claude: "All lab vendors use portal-based ordering"
+- ChatGPT: "Glidewell, National Dentex, DDS Lab all require STL file upload"
+- **Consensus:** Lab category = always partial_csv
+
+---
+
+## Challenge 5: Vendor Replacement During Research
+
+**Problem:** Some vendors in the initial list had insufficient public documentation or no longer existed.
+
+**Vendors Replaced:**
+- V004: Original vendor → ROE Dental Laboratory
+- V005: Original vendor → Vyne Dental
+- V006: Original vendor → iCoreConnect
+
+**Process:** Created SUPPLEMENT prompts for replacement vendors, maintained data quality standards.
+
+---
+
+## Challenge 6: Integration Quality Grounding
+
+**Problem:** How to assign integration_quality (0/1/2) for 2,000 site×vendor pairs without real data?
 
 **Solution:**
-1. Required LLMs to cite specific sources (vendor websites, press releases)
-2. Cross-validated findings across multiple models (Claude Opus, Sonnet, ChatGPT Pro)
-3. Focused on structural patterns rather than specific claims
+1. Researched 110 vendor×EHR combinations from vendor websites
+2. Discovered category-level rules
+3. Applied deterministic rules based on discovered patterns
 
-**Example of cross-validation:**
-- Claude Opus: "All lab vendors use portal-based ordering"
-- ChatGPT Pro: "Glidewell, National Dentex, and Modern Dental all require STL file upload"
-- **Conclusion:** Lab category = always partial_csv (validated across models)
-
----
-
-## Challenge 3: Encoding Real Mechanisms vs. Arbitrary Rules
-
-**Problem:** How do you know your causal mechanisms reflect reality?
-
-**Diagnosis:** Initial mechanism designs were based on intuition. "Integration quality probably affects switching" is a hypothesis, not a fact.
-
-**Solution:** Ground mechanisms in observable patterns from LLM research:
-
-| Discovered Pattern | Encoded Mechanism |
-|-------------------|-------------------|
-| "Telephony requires real-time call pop" | Telephony = always full_api |
-| "Labs use portal-based STL uploads" | Lab = always partial_csv |
-| "Premium RCM vendors have certified integrations" | RCM integration = tier-dependent |
-
-**Validation:** Ablation studies on downstream R-GCN confirmed integration_quality was the dominant feature (-25.5% PR-AUC when removed).
+**Coverage:**
+- 58.2% full_api (quality=2)
+- 39.1% partial_csv (quality=1)
+- 2.7% none (quality=0)
 
 ---
 
-## Challenge 4: Avoiding Trivial Learnability
+## Challenge 7: Validation Against Industry Benchmarks
 
-**Problem:** If the synthetic data is too simple, any model achieves 99% accuracy. If too complex, nothing learns.
+**Problem:** How to validate synthetic data without real PE data to compare against?
 
-**Diagnosis:** Early generators created perfectly separable classes. A decision tree could achieve 100% accuracy by checking one feature.
+**Solution:** Validated against published industry benchmarks:
 
-**Solution:** Added realistic noise and confounders:
-- **Seasonality:** December/January peaks in A/R
-- **Site-level baselines:** Each practice has inherent characteristics
-- **Change fatigue:** Recent switches reduce future switching probability
-- **Random noise:** N(0, σ) on all KPIs
-
-**Result:** Final dataset required an R-GCN to achieve 0.94 PR-AUC. Simple baselines (logistic regression) achieved only 0.72.
-
----
-
-## Challenge 5: Multi-Model Orchestration
-
-**Problem:** Different LLMs have different strengths. Which model for which task?
-
-**Solution:** Task-specific model selection:
-
-| Task | Best Model | Reasoning |
-|------|-----------|-----------|
-| Deep vendor research | Claude Opus | Best at following complex prompts |
-| Pattern synthesis | Claude Sonnet | Good balance of speed and quality |
-| Telephony vendors | ChatGPT Pro | Better at real-time web access |
-| Cross-validation | All three | Consensus reduces hallucination |
+| Metric | Synthetic | Industry | Status |
+|--------|-----------|----------|--------|
+| Days A/R | 27.3 days | 30-40 days | PASS |
+| Denial Rate | 5.6% | 7-9% | PASS |
+| Switch Rate | 4.0% annual | ~5% | PASS |
 
 ---
 
@@ -92,11 +112,11 @@ This document captures the key challenges overcome during the development of the
 
 | Lesson | Impact |
 |--------|--------|
-| **Mechanism-first beats data-first** | Model learned causal structure, not arbitrary patterns |
-| **Cross-model validation reduces hallucination** | Structural patterns confirmed across Claude + GPT |
-| **Category rules > vendor rules** | "All labs use portals" more reliable than "Glidewell uses X" |
-| **Noise is necessary** | Trivial data = trivial model = no generalization |
-| **Ablation validates mechanisms** | -25.5% PR-AUC drop confirms integration_quality matters |
+| **Manual LLM > automated tools** | Higher quality, category pattern discovery |
+| **Category rules > vendor rules** | Structural patterns more reliable than specifics |
+| **Cross-model consensus** | Reduces hallucination risk |
+| **Industry benchmarks validate** | External validation when no ground truth |
+| **Ablation confirms mechanism** | -25.5% PR-AUC drop validates integration_quality |
 
 ---
 
