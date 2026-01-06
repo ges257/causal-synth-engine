@@ -4,39 +4,35 @@
 
 The Causal Synth Engine is a three-stage pipeline that transforms LLM web research into causally-grounded synthetic training data.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  STAGE 1: LLM-as-RESEARCHER                                     │
-│  ─────────────────────────────                                  │
-│  Input:  20 real dental vendor websites                         │
-│  Models: Claude Opus, Sonnet, ChatGPT Pro                       │
-│  Output: Raw markdown findings (integration types, KPIs, etc.)  │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  STAGE 2: LLM-as-ANALYST                                        │
-│  ─────────────────────────                                      │
-│  Input:  Raw research from 5 batches                            │
-│  Task:   Cross-vendor pattern discovery                         │
-│  Output: text_features.json (~450 knowledge graph triples)      │
-│  Key:    "5 of 7 categories have FIXED integration patterns"    │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  STAGE 3: PYTHON GENERATORS                                     │
-│  ─────────────────────────────                                  │
-│  Input:  Discovered rules + category patterns                   │
-│  Task:   Generate instances obeying causal structure            │
-│  Output: 6 CSV files (100 sites, 866 contracts, 7200 KPIs)      │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-                    ┌─────────────────┐
-                    │  R-GCN Training │
-                    │  (pe-rollup-gnn)│
-                    └─────────────────┘
+```mermaid
+flowchart TB
+    subgraph S1["Stage 1: LLM-as-Researcher"]
+        A1["20 real dental vendor websites"]
+        A2["Raw markdown findings"]
+        A1 --> A2
+    end
+
+    subgraph S2["Stage 2: LLM-as-Analyst"]
+        B1["Cross-vendor pattern discovery"]
+        B2["text_features.json (~450 triples)"]
+        B1 --> B2
+    end
+
+    subgraph S3["Stage 3: Python Generators"]
+        C1["Encode discovered causal rules"]
+        C2["6 CSV files (100 sites, 866 contracts)"]
+        C1 --> C2
+    end
+
+    S1 --> S2 --> S3
+
+    S3 --> E["R-GCN Training"]
+
+    style S1 fill:#1a1a2e,stroke:#A78BFA,color:#A3B8CC
+    style S2 fill:#1a1a2e,stroke:#A78BFA,color:#A3B8CC
+    style S3 fill:#1a1a2e,stroke:#A78BFA,color:#A3B8CC
+    style E fill:#A78BFA,stroke:#A78BFA,color:#0D1B2A
+    linkStyle 0,1,2 stroke:#FFFFFF,stroke-width:2px
 ```
 
 ---
@@ -90,23 +86,24 @@ The Causal Synth Engine is a three-stage pipeline that transforms LLM web resear
 
 ### Generator Pipeline
 
-```
-generate_vendors.py           → vendors.csv (20 real vendors)
-        │
-        ▼
-generate_sites.py             → sites.csv (100 synthetic practices)
-        │
-        ▼
-generate_integration_matrix.py → integration_matrix.csv (2000 pairs)
-        │                        [Applies category-level rules]
-        ▼
-generate_initial_state.py     → initial_state_2019.csv (700 contracts)
-        │
-        ▼
-simulate_switches.py          → contracts_2019_2024.csv (866 contracts)
-        │                        [166 switches over 6 years]
-        ▼
-generate_kpis.py              → kpis.csv (7200 monthly records)
+```mermaid
+flowchart TB
+    V["generate_vendors.py → vendors.csv (20)"]
+    S["generate_sites.py → sites.csv (100)"]
+    I["generate_integration_matrix.py → matrix.csv (2000)"]
+    C["generate_initial_state.py → initial_state.csv (700)"]
+    W["simulate_switches.py → contracts.csv (866)"]
+    K["generate_kpis.py → kpis.csv (7200)"]
+
+    V --> S --> I --> C --> W --> K
+
+    style V fill:#1a1a2e,stroke:#A78BFA,color:#A3B8CC
+    style S fill:#1a1a2e,stroke:#A78BFA,color:#A3B8CC
+    style I fill:#1a1a2e,stroke:#A78BFA,color:#A3B8CC
+    style C fill:#1a1a2e,stroke:#A78BFA,color:#A3B8CC
+    style W fill:#1a1a2e,stroke:#A78BFA,color:#A3B8CC
+    style K fill:#1a1a2e,stroke:#A78BFA,color:#A3B8CC
+    linkStyle default stroke:#A78BFA,stroke-width:2px
 ```
 
 ### Core Causal Mechanism

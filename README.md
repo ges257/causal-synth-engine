@@ -38,28 +38,32 @@ Integration Quality → Acquisition Value → Vendor Switching
 
 ## Three-Stage Pipeline
 
-```
-┌────────────────────────────────────────────────────────┐
-│  STAGE 1: LLM-as-RESEARCHER                            │
-│  Models: Claude Opus, Sonnet, ChatGPT Pro              │
-│  Task: Research 20 real dental vendors                 │
-│  Output: Raw markdown findings                         │
-└────────────────────────────────────────────────────────┘
-                         │
-                         ▼
-┌────────────────────────────────────────────────────────┐
-│  STAGE 2: LLM-as-ANALYST                               │
-│  Task: Cross-vendor pattern discovery                  │
-│  Finding: "ALL Lab vendors use CSV portals"            │
-│  Output: text_features.json (~450 triples)             │
-└────────────────────────────────────────────────────────┘
-                         │
-                         ▼
-┌────────────────────────────────────────────────────────┐
-│  STAGE 3: PYTHON GENERATORS                            │
-│  Task: Encode discovered rules, generate instances     │
-│  Output: 6 CSV files (100 sites, 866 contracts)        │
-└────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph S1["Stage 1: LLM-as-Researcher"]
+        A1["Claude Opus, Sonnet, ChatGPT Pro"]
+        A2["Research 20 real dental vendors"]
+        A1 --> A2
+    end
+
+    subgraph S2["Stage 2: LLM-as-Analyst"]
+        B1["Cross-vendor pattern discovery"]
+        B2["text_features.json (~450 triples)"]
+        B1 --> B2
+    end
+
+    subgraph S3["Stage 3: Python Generators"]
+        C1["Encode discovered rules"]
+        C2["6 CSV files (100 sites, 866 contracts)"]
+        C1 --> C2
+    end
+
+    S1 --> S2 --> S3
+
+    style S1 fill:#1a1a2e,stroke:#A78BFA,color:#A3B8CC
+    style S2 fill:#1a1a2e,stroke:#A78BFA,color:#A3B8CC
+    style S3 fill:#1a1a2e,stroke:#A78BFA,color:#A3B8CC
+    linkStyle 0,1,2 stroke:#FFFFFF,stroke-width:2px
 ```
 
 ---
