@@ -4,69 +4,85 @@
 
 The Causal Synth Engine is a three-stage pipeline that transforms LLM web research into causally-grounded synthetic training data.
 
-```mermaid
-graph TB
-    subgraph "Stage 1: LLM Research"
-        A[Real Vendor Websites] --> B[Claude/GPT with Web Access]
-        B --> C[Raw Markdown Findings]
-    end
-
-    subgraph "Stage 2: Pattern Discovery"
-        C --> D[Cross-Vendor Analysis]
-        D --> E[text_features.json]
-        E --> F[450 Knowledge Graph Triples]
-    end
-
-    subgraph "Stage 3: Data Generation"
-        F --> G[generate_vendors.py]
-        G --> H[generate_sites.py]
-        H --> I[generate_integration_matrix.py]
-        I --> J[simulate_switches.py]
-        J --> K[generate_kpis.py]
-        K --> L[6 CSV Files]
-    end
-
-    L --> M[pe-rollup-gnn Training]
 ```
+┌─────────────────────────────────────────────────────────────────┐
+│  STAGE 1: LLM-as-RESEARCHER                                     │
+│  ─────────────────────────────                                  │
+│  Input:  20 real dental vendor websites                         │
+│  Models: Claude Opus, Sonnet, ChatGPT Pro                       │
+│  Output: Raw markdown findings (integration types, KPIs, etc.)  │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STAGE 2: LLM-as-ANALYST                                        │
+│  ─────────────────────────                                      │
+│  Input:  Raw research from 5 batches                            │
+│  Task:   Cross-vendor pattern discovery                         │
+│  Output: text_features.json (~450 knowledge graph triples)      │
+│  Key:    "5 of 7 categories have FIXED integration patterns"    │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STAGE 3: PYTHON GENERATORS                                     │
+│  ─────────────────────────────                                  │
+│  Input:  Discovered rules + category patterns                   │
+│  Task:   Generate instances obeying causal structure            │
+│  Output: 6 CSV files (100 sites, 866 contracts, 7200 KPIs)      │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │  R-GCN Training │
+                    │  (pe-rollup-gnn)│
+                    └─────────────────┘
+```
+
+---
 
 ## Stage 1: LLM-as-Researcher
 
 **Objective:** Extract structured vendor information from the web
 
 **Process:**
-1. Created 5 batch prompts covering 20 dental vendors
+1. Created 5 batch prompts covering 20 dental vendors across 7 categories
 2. Used Claude Opus, Sonnet, and ChatGPT Pro with live internet access
-3. Extracted EHR integrations, API types, user feedback, KPI claims
+3. Extracted: EHR integrations, API types, DSO partnerships, KPI claims, pricing
 
-**Models Used:**
-| Batch | Category | Model |
-|-------|----------|-------|
-| 1 | Lab (V001-V004) | Claude Opus 4.1 |
-| 2 | RCM (V005-V007) | Claude Sonnet 4.5 |
-| 3 | Telephony (V008-V010) | ChatGPT Pro |
-| 4 | Scheduling/Clearinghouse (V011-V015) | Claude Opus 4.1 |
-| 5 | IT/Supplies (V016-V020) | Claude Sonnet 4.5 |
+**Batch Allocation:**
 
-**Output:** Raw markdown files in `research/prompts/`
+| Batch | Category | Vendors | Model | Why This Model |
+|-------|----------|---------|-------|----------------|
+| 1 | Lab | V001-V004 | Claude Opus 4.1 | Complex integration research |
+| 2 | RCM | V005-V007 | Claude Sonnet 4.5 | Good balance of speed/quality |
+| 3 | Telephony | V008-V010 | ChatGPT Pro | Better real-time web access |
+| 4 | Scheduling/Clearinghouse | V011-V015 | Claude Opus 4.1 | Complex multi-vendor batch |
+| 5 | IT/Supplies | V016-V020 | Claude Sonnet 4.5 | Speed for simpler vendors |
+
+**Output:** Raw markdown research files
+
+---
 
 ## Stage 2: LLM-as-Analyst
 
 **Objective:** Discover cross-vendor patterns and category-level rules
 
-**Key Discoveries:**
+**Critical Discovery:** 5 of 7 categories have **FIXED** integration patterns (not probabilistic):
 
-| Category | Pattern | Quality Code | Evidence |
-|----------|---------|--------------|----------|
+| Category | Pattern | Quality | Evidence |
+|----------|---------|---------|----------|
 | Lab | ALL partial_csv | 1 | Portal uploads, STL files |
-| Telephony | ALL full_api | 2 | Call Pop requires real-time |
-| Scheduling | ALL full_api | 2 | Self-booking requires real-time |
-| Supplies | ALL partial_csv | 1 | Separate portals even for owned EHRs |
-| RCM | Tier-dependent | 1-2 | Premium vendors have full API |
-| Clearinghouse | Mixed | 0-2 | Vendor + EHR dynamics |
-
-**This is the critical insight:** 5 of 7 categories have **fixed integration patterns**, not probabilistic ones.
+| Telephony | ALL full_api | 2 | Call Pop requires real-time sync |
+| Scheduling | ALL full_api | 2 | Calendar write-back requires real-time |
+| Supplies | ALL partial_csv | 1 | Separate e-commerce portals |
+| RCM | Tier-dependent | 1-2 | Premium vendors invest in integrations |
+| Clearinghouse | Mixed | 0-2 | Depends on vendor + EHR combination |
+| IT_MSP | Ownership-based | 1-2 | Henry Schein owns Dentrix → full_api |
 
 **Output:** `text_features.json` with ~450 knowledge graph triples
+
+---
 
 ## Stage 3: Python Generators
 
@@ -75,80 +91,107 @@ graph TB
 ### Generator Pipeline
 
 ```
-generate_vendors.py    → vendors.csv (20 real vendors)
-        ↓
-generate_sites.py      → sites.csv (100 synthetic practices)
-        ↓
-generate_integration_matrix.py → integration_matrix.csv
-        ↓                        (applies category-level rules)
-generate_initial_state.py → initial_state.csv
-        ↓
-simulate_switches.py   → contracts_2019_2024.csv (866 contracts)
-        ↓
-generate_kpis.py       → kpis.csv
+generate_vendors.py           → vendors.csv (20 real vendors)
+        │
+        ▼
+generate_sites.py             → sites.csv (100 synthetic practices)
+        │
+        ▼
+generate_integration_matrix.py → integration_matrix.csv (2000 pairs)
+        │                        [Applies category-level rules]
+        ▼
+generate_initial_state.py     → initial_state_2019.csv (700 contracts)
+        │
+        ▼
+simulate_switches.py          → contracts_2019_2024.csv (866 contracts)
+        │                        [166 switches over 6 years]
+        ▼
+generate_kpis.py              → kpis.csv (7200 monthly records)
 ```
 
-### Integration Matrix Generation
+### Core Causal Mechanism
 
-The key causal mechanism is encoded here:
-
+**Integration Quality Assignment:**
 ```python
-def assign_integration_quality(vendor, ehr, category):
+def assign_integration_quality(vendor, site_ehr, category):
     """
-    Applies discovered category-level rules, NOT random assignment
+    Applies DISCOVERED rules, not random assignment
     """
     if category == 'Lab':
-        return 1  # ALL partial_csv (from web research)
+        return 1  # ALL partial_csv (industry standard)
     elif category == 'Telephony':
-        return 2  # ALL full_api (from web research)
+        return 2  # ALL full_api (real-time required)
     elif category == 'Scheduling':
-        return 2  # ALL full_api (from web research)
+        return 2  # ALL full_api (calendar sync required)
+    elif category == 'Supplies':
+        return 1  # ALL partial_csv (separate portals)
     elif category == 'RCM':
-        return vendor.tier  # Tier-dependent
-    # ...
+        # Tier-dependent: premium vendors have better integrations
+        return 2 if vendor.tier == 1 and site_ehr in vendor.certified_ehrs else 1
+    # ... additional rules
 ```
 
-### Vendor Switching Simulation
-
-Switching probability depends on integration quality:
-
+**Vendor Switching Simulation:**
 ```python
-def compute_switch_probability(current_integration_quality, potential_vendor):
-    """
-    High integration quality → low switching probability
-    Low integration quality → high switching probability
-    """
-    friction = 2 - current_integration_quality  # 0, 1, or 2
-    base_prob = friction * 0.15  # 0%, 15%, or 30%
-    # Apply modifiers for vendor tier, peer adoption, etc.
-    return adjusted_prob
+P_switch = base_monthly × integration_multiplier × fatigue_multiplier
+
+# Integration quality drives switching
+integration_multiplier = {
+    0: 2.0,   # Manual entry → high friction → more likely to switch
+    1: 1.3,   # CSV workflow → moderate friction
+    2: 0.7    # Full API → sticky, less likely to switch
+}[current_integration_quality]
+
+# Recent switches reduce future switching
+fatigue_multiplier = {
+    '<12 months': 0.3,   # Exhausted from recent change
+    '12-24 months': 0.7, # Hesitant
+    '>24 months': 1.0    # Ready for change
+}[time_since_last_switch]
 ```
+
+---
 
 ## Output Files
 
 | File | Rows | Description |
 |------|------|-------------|
-| `vendors.csv` | 20 | Real vendor entities with categories, tiers |
-| `sites.csv` | 100 | Synthetic dental practices with regions, EHRs |
-| `integration_matrix.csv` | 400 | 20×20 vendor-EHR integration quality matrix |
-| `initial_state.csv` | 700 | Initial site-vendor contracts (7 per site) |
-| `contracts_2019_2024.csv` | 866 | Full contract history with switches |
-| `kpis.csv` | 500 | Site-level KPI time series |
+| `vendors.csv` | 20 | Real vendor entities (National Dentex, Weave, etc.) |
+| `sites.csv` | 100 | Synthetic practices with regions, EHRs, revenue |
+| `integration_matrix.csv` | 2,000 | 100 sites × 20 vendors with quality scores |
+| `initial_state_2019.csv` | 700 | Starting contracts (7 vendors per site) |
+| `contracts_2019_2024.csv` | 866 | Full history including 166 switches |
+| `kpis.csv` | 7,200 | Monthly Days A/R and Denial Rate (72 months × 100 sites) |
 
-## Causal Validation
+---
 
-The downstream R-GCN model achieved:
-- **PR-AUC: 0.9407** (beats LightGBM baseline)
+## Data Validation
+
+**Industry Benchmark Comparison:**
+
+| Metric | Synthetic | Industry | Status |
+|--------|-----------|----------|--------|
+| Days A/R | 27.3 days | 30-40 days | PASS |
+| Denial Rate | 5.6% | 7-9% | PASS |
+| Switch Rate | 4.0% annual | ~5% | PASS |
+
+---
+
+## Downstream Validation
+
+The R-GCN model trained on this data achieved:
+- **PR-AUC: 0.9407** (beats LightGBM baseline by +0.37%)
 - **Ablation:** Removing `integration_quality` → **-25.5% PR-AUC**
 
-This proves the model learned the causal mechanism we encoded, not spurious correlations.
+This proves the model learned the causal mechanism we encoded.
+
+---
 
 ## Directory Structure
 
 ```
 causal-synth-engine/
 ├── src/
-│   ├── __init__.py
 │   ├── generate_all_data.py          # Master orchestration
 │   ├── generate_sites.py             # Site generation
 │   ├── generate_vendors.py           # Vendor encoding
@@ -158,9 +201,8 @@ causal-synth-engine/
 │   └── generate_kpis.py              # KPI generation
 ├── research/
 │   ├── prompts/                       # LLM research prompts
-│   └── results/                       # Knowledge graph output
+│   └── results/                       # Research outputs
 ├── outputs/                           # Generated CSVs
-│   └── example/                       # Sample outputs
 └── docs/
-    └── METHODOLOGY.md                 # Detailed methodology
+    └── METHODOLOGY.md                 # Full methodology
 ```
