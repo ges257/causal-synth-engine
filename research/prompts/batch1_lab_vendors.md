@@ -1,9 +1,3 @@
-# ==============================================================================
-# COPY CREATED: 2025-12-19_07-26PM_EST (NYC Time)
-# ORIGINAL: /home/g12/pa_final_project_fall25/HW/ps5/llm_research_sample.md
-# PURPOSE: Synthetic Data Methodology Package for Publication Review
-# ==============================================================================
-
 # LLM Research Sample: Batch 1 - Lab Vendors
 
 **Model:** Claude Opus 4.1

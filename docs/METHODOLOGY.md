@@ -1,9 +1,3 @@
-# ==============================================================================
-# COPY CREATED: 2025-12-19_07-26PM_EST (NYC Time)
-# ORIGINAL: /home/g12/pa_final_project_fall25/HW/ps5/synthetic_data_methodology.md
-# PURPOSE: Synthetic Data Methodology Package for Publication Review
-# ==============================================================================
-
 # Synthetic Data Generation Methodology
 
 **Author:** Gregory Schwartz
