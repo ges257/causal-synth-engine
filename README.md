@@ -10,6 +10,8 @@
 ![Pandas](https://img.shields.io/badge/Pandas-Data_Generation-A3B8CC?style=flat-square&logo=pandas&logoColor=0D1B2A)
 ![LLM](https://img.shields.io/badge/LLM-Research_Extraction-A78BFA?style=flat-square)
 
+[Architecture](ARCHITECTURE.md) · [Challenges](CHALLENGES.md) · [Learnings](LEARNINGS.md)
+
 </div>
 
 ---
