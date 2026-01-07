@@ -4,7 +4,6 @@
 
 **Causal Market Modeling for [PE Rollup Intelligence Platform](https://github.com/ges257/pe-rollup-intelligence-system)**
 
-[![Status](https://img.shields.io/badge/Status-Production-success?style=for-the-badge)]
 [![Stack](https://img.shields.io/badge/Stack-Python_|_Pandas-0D1B2A?style=for-the-badge)]
 
 ![Python](https://img.shields.io/badge/Python-3.11+-A3B8CC?style=flat-square&logo=python&logoColor=0D1B2A)
