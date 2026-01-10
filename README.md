@@ -2,7 +2,7 @@
 
 <div align="center">
 
-**Causal Market Modeling for [PE Rollup Intelligence Platform](https://github.com/ges257/pe-rollup-intelligence-system)**
+**A deterministic market simulator where LLMs perform staged research + analysis, and the discovered mechanisms are compiled into generators that produce trainable datasets (sites, contracts, KPIs) for downstream models. (for [PE Rollup Intelligence Platform](https://github.com/ges257/pe-rollup-intelligence-system))**
 
 [![Stack](https://img.shields.io/badge/Stack-Python_|_Pandas-0D1B2A?style=for-the-badge)]
 
