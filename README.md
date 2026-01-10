@@ -32,7 +32,7 @@ LLM-assisted research and cross-vendor analysis produced **auditable artifacts**
 
 Built a deterministic market simulator by extracting mechanisms from industry research and vendor analysis, then encoding them directly into the generated graph structure.
 
-Core idea: **integration quality influences acquisition value**, which drives **vendor switching behavior** — so the downstream GNN trains on **mechanism-shaped data**, not random correlations.
+Core idea: **integration quality influences acquisition value**, which drives **vendor switching behavior** — so the downstream GNN trains on ***<u>mechanism-shaped data</u>***, not random correlations.
 
 ---
 
