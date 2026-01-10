@@ -16,9 +16,11 @@
 
 ---
 
-## Outcome & Strategy
+## Outcome
 
-Created 100 synthetic dental practices (866 contracts) to solve cold-start scarcity for the PE Rollup GNN project. Used LLM-assisted research extraction to ground causal simulation in empirical evidence, then encoded verified mechanisms into deterministic generation rules.
+Generated **100 synthetic dental practices** and **866 contracts** to eliminate cold-start data scarcity for the PE Rollup GNN project.
+
+LLM-assisted research and cross-vendor analysis produced **auditable artifacts** (e.g., ~450 triples), which were then compiled into deterministic generation rules — ensuring the simulator encodes **verified mechanisms**, not assumptions.
 
 ## Technical Build
 
