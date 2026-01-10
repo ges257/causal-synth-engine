@@ -30,7 +30,9 @@ LLM-assisted research and cross-vendor analysis produced **auditable artifacts**
 
 ## Technical Build
 
-Built a market simulator by extracting mechanistic relationships from industry reports, vendor analysis, and operational research—encoding how integration quality drives acquisition value and how vendor consolidation affects pricing dynamics into deterministic graph topology. This allowed the GNN to learn verified market mechanisms rather than hallucinated patterns.
+Built a deterministic market simulator by extracting mechanisms from industry research and vendor analysis, then encoding them directly into the generated graph structure.
+
+Core idea: **integration quality influences acquisition value**, which drives **vendor switching behavior** — so the downstream GNN trains on *mechanism-shaped data*, not random correlations.
 
 ---
 
