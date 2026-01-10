@@ -16,6 +16,12 @@
 
 ---
 
+<div align="center">
+
+In 2026, the constraint is rarely "model code" — it's getting **enough high-quality, compliant data** to train, evaluate, and harden systems for production. This project is an **AGENTIC DATA FACTORY**
+
+</div>
+
 ## Outcome
 
 Generated **100 synthetic dental practices** and **866 contracts** to eliminate cold-start data scarcity for the PE Rollup GNN project.
